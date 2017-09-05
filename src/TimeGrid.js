@@ -240,7 +240,9 @@ export default class TimeGrid extends Component {
         style={style}
       >
         <div className="rbc-row">
-          <div className="rbc-label rbc-header-gutter" style={{ width }} />
+          <div className="rbc-label rbc-header-gutter" style={{ width }}>
+            {components.headerGutter}
+          </div>
           {this.renderHeaderCells(range)}
         </div>
         <div className="rbc-row">
@@ -302,14 +304,14 @@ export default class TimeGrid extends Component {
         >
           {drilldownView
             ? <a
-                href="#"
-                onClick={e => this.handleHeaderClick(date, drilldownView, e)}
-              >
-                {header}
-              </a>
+              href="#"
+              onClick={e => this.handleHeaderClick(date, drilldownView, e)}
+            >
+              {header}
+            </a>
             : <span>
-                {header}
-              </span>}
+              {header}
+            </span>}
         </div>
       );
     });
