@@ -2,12 +2,12 @@ import invariant from 'invariant';
 import { navigate } from './constants';
 import VIEWS from '../Views';
 
-export default function moveDate(action, date, View) {
+export default function moveDate(action, date, View, today) {
   View = typeof View === 'string' ? VIEWS[View] : View;
 
   switch (action) {
     case navigate.TODAY:
-      date = new Date()
+      date = today || new Date()
       break;
     case navigate.DATE:
       break;

@@ -15,6 +15,7 @@ class BackgroundCells extends React.Component {
   static propTypes = {
     cellWrapperComponent: elementType,
     container: PropTypes.func,
+    now: PropTypes.instanceOf(Date),
     selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
 
     onSelectSlot: PropTypes.func.isRequired,
@@ -36,7 +37,7 @@ class BackgroundCells extends React.Component {
     };
   }
 
-  componentDidMount(){
+  componentDidMount() {
     this.props.selectable
       && this._selectable()
   }
@@ -53,14 +54,14 @@ class BackgroundCells extends React.Component {
       this._teardownSelectable();
   }
 
-  render(){
-    let { range, cellWrapperComponent: Wrapper } = this.props;
+  render() {
+    let { range, cellWrapperComponent: Wrapper, now } = this.props;
     let { selecting, startIdx, endIdx } = this.state;
 
     return (
       <div className='rbc-row-bg'>
         {range.map((date, index) => {
-          let selected =  selecting && index >= startIdx && index <= endIdx;
+          let selected = selecting && index >= startIdx && index <= endIdx;
           return (
             <Wrapper
               key={index}
@@ -72,7 +73,7 @@ class BackgroundCells extends React.Component {
                 className={cn(
                   'rbc-day-bg',
                   selected && 'rbc-selected-cell',
-                  dates.isToday(date) && 'rbc-today',
+                  dates.eq(date, now, 'day') && 'rbc-today',
                 )}
               />
             </Wrapper>
@@ -82,7 +83,7 @@ class BackgroundCells extends React.Component {
     )
   }
 
-  _selectable(){
+  _selectable() {
     let node = findDOMNode(this);
     let selector = this._selector = new Selection(this.props.container)
 
@@ -100,7 +101,7 @@ class BackgroundCells extends React.Component {
         let nodeBox = getBoundsForNode(node);
 
         ({ startIdx, endIdx } = dateCellSelection(
-            this._initial
+          this._initial
           , nodeBox
           , box
           , range.length
@@ -126,7 +127,7 @@ class BackgroundCells extends React.Component {
           let { range, rtl } = this.props;
 
           if (pointInBox(rowBox, point)) {
-            let width = slotWidth(getBoundsForNode(node),  range.length);
+            let width = slotWidth(getBoundsForNode(node), range.length);
             let currentCell = getCellAtX(rowBox, point.x, width, rtl, range.length);
 
             this._selectSlot({

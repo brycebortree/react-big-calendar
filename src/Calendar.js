@@ -15,6 +15,7 @@ import { navigate, views } from './utils/constants';
 import defaultFormats from './formats';
 import viewLabel from './utils/viewLabel';
 import moveDate from './utils/move';
+import dates from './utils/dates';
 import VIEWS from './Views';
 import Toolbar from './Toolbar';
 import EventWrapper from './EventWrapper';
@@ -33,8 +34,6 @@ function isValidView(view, { views: _views }) {
   let names = viewNames(_views)
   return names.indexOf(view) !== -1
 }
-
-let now = new Date();
 
 /**
  * react-big-calendar is full featured Calendar component for managing events and dates. It uses
@@ -72,6 +71,13 @@ class Calendar extends React.Component {
      * @controllable onNavigate
      */
     date: PropTypes.instanceOf(Date),
+
+    /**
+     * The current date value of the calendar. Determines the visible view range
+     *
+     * @controllable onNavigate
+     */
+    now: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.func]),
 
     /**
      * The current view of the calendar.
@@ -469,7 +475,8 @@ class Calendar extends React.Component {
     toolbar: true,
     view: views.MONTH,
     views: [views.MONTH, views.WEEK, views.DAY, views.AGENDA],
-    date: now,
+    date: new Date(),
+    now: new Date(),
     step: 30,
 
     drilldownView: views.DAY,
@@ -514,6 +521,11 @@ class Calendar extends React.Component {
     return getDrilldownView(date, view, Object.keys(this.getViews()));
   };
 
+  getNow = () => {
+    const { now } = this.props;
+    return typeof now === 'function' ? now() : now;
+  }
+
   render() {
     let {
        view, toolbar, events
@@ -525,6 +537,8 @@ class Calendar extends React.Component {
       , elementProps
       , toolbarProps
       , date: current
+      , min
+      , max
       , ...props } = this.props;
 
     formats = defaultFormats(formats)
@@ -543,6 +557,7 @@ class Calendar extends React.Component {
     )
 
     let ToolbarToRender = components.toolbar || Toolbar
+    const now = this.getNow();
 
     return (
       <div
@@ -572,6 +587,9 @@ class Calendar extends React.Component {
           formats={undefined}
           events={events}
           date={current}
+          now={now}
+          min={min || dates.startOf(now, 'day')}
+          max={max || dates.endOf(now, 'day')}
           components={viewComponents}
           getDrilldownView={this.getDrilldownView}
           onNavigate={this.handleNavigate}
@@ -588,7 +606,7 @@ class Calendar extends React.Component {
     let { view, date, onNavigate } = this.props;
     let ViewComponent = this.getView();
 
-    date = moveDate(action, newDate || date, ViewComponent)
+    date = moveDate(action, newDate || date, ViewComponent, this.getNow())
 
     onNavigate(date, view, action)
   };

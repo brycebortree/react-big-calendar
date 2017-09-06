@@ -104,7 +104,7 @@ class DaySlot extends React.Component {
     return (
       <TimeColumn
         {...props}
-        className={cn('rbc-day-slot', dates.isToday(max) && 'rbc-today')}
+        className={cn('rbc-day-slot', dates.eq(max, now, 'day') && 'rbc-today')}
         now={now}
         min={min}
         max={max}

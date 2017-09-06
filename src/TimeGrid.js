@@ -217,7 +217,7 @@ export default class TimeGrid extends Component {
           date={date}
           events={daysEvents}
         >
-          {dates.isToday(maxDate)
+          {dates.eq(maxDate, today, 'day')
             ? <div ref="timeIndicator" className="rbc-current-time-indicator" />
             : null}
         </DayColumn>
@@ -279,7 +279,7 @@ export default class TimeGrid extends Component {
   }
 
   renderHeaderCells(range) {
-    let { dayFormat, culture, components, getDrilldownView } = this.props;
+    let { dayFormat, culture, components, getDrilldownView, now } = this.props;
     let HeaderComponent = components.header || Header;
 
     return range.map((date, i) => {
@@ -299,7 +299,7 @@ export default class TimeGrid extends Component {
       return (
         <div
           key={i}
-          className={cn('rbc-header', dates.isToday(date) && 'rbc-today')}
+          className={cn('rbc-header', dates.eq(date, now, 'day') && 'rbc-today')}
           style={segStyle(1, this.slots)}
         >
           {drilldownView
@@ -388,8 +388,7 @@ export default class TimeGrid extends Component {
       return;
     }
 
-    const { rtl, min, max } = this.props;
-    const now = new Date();
+    const { rtl, min, max, now } = this.props;
 
     const secondsGrid = dates.diff(max, min, 'seconds');
     const secondsPassed = dates.diff(now, min, 'seconds');

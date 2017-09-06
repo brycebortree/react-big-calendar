@@ -67,13 +67,13 @@ class DateContentRow extends React.Component {
     let row = qsa(findDOMNode(this), '.rbc-row-bg')[0]
 
     let cell;
-    if (row) cell = row.children[slot-1]
+    if (row) cell = row.children[slot - 1]
 
     let events = this.segments
       .filter(seg => isSegmentInSlot(seg, slot))
       .map(seg => seg.event)
 
-    onShowMore(events, range[slot-1], cell, slot)
+    onShowMore(events, range[slot - 1], cell, slot)
   }
 
   createHeadingRef = r => {
@@ -98,7 +98,7 @@ class DateContentRow extends React.Component {
   }
 
   renderHeadingCell = (date, index) => {
-    let { renderHeader, range } = this.props;
+    let { renderHeader, now, range } = this.props;
 
     return renderHeader({
       date,
@@ -106,7 +106,7 @@ class DateContentRow extends React.Component {
       style: segStyle(1, range.length),
       className: cn(
         'rbc-date-cell',
-        dates.eq(date, this.props.now, 'day') && 'rbc-now', // FIXME use props.now
+        dates.eq(date, now, 'day') && 'rbc-now', // FIXME use props.now
       )
     })
   }
@@ -150,6 +150,7 @@ class DateContentRow extends React.Component {
       eventWrapperComponent,
       onSelectStart,
       onSelectEnd,
+      now,
       ...props
     } = this.props;
 
@@ -164,11 +165,12 @@ class DateContentRow extends React.Component {
     }, range))
 
     let { levels, extra } = eventLevels(segments, Math.max(maxRows - 1, 1));
-    while (levels.length < minRows ) levels.push([])
+    while (levels.length < minRows) levels.push([])
 
     return (
       <div className={className}>
         <BackgroundCells
+          now={now}
           rtl={rtl}
           range={range}
           selectable={selectable}
