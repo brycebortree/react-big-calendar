@@ -13,10 +13,12 @@ import Selection, { getBoundsForNode, isEvent } from './Selection';
 class BackgroundCells extends React.Component {
 
   static propTypes = {
+    date: PropTypes.instanceOf(Date),
     cellWrapperComponent: elementType,
     container: PropTypes.func,
     now: PropTypes.instanceOf(Date),
     selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
+    longPressThreshold: PropTypes.number,
 
     onSelectSlot: PropTypes.func.isRequired,
     onSelectEnd: PropTypes.func,
@@ -55,7 +57,7 @@ class BackgroundCells extends React.Component {
   }
 
   render() {
-    let { range, cellWrapperComponent: Wrapper, now } = this.props;
+    let { range, cellWrapperComponent: Wrapper, date: currentDate, now } = this.props;
     let { selecting, startIdx, endIdx } = this.state;
 
     return (
@@ -74,6 +76,7 @@ class BackgroundCells extends React.Component {
                   'rbc-day-bg',
                   selected && 'rbc-selected-cell',
                   dates.eq(date, now, 'day') && 'rbc-today',
+                  currentDate && dates.month(currentDate) !== dates.month(date) && 'rbc-off-range-bg',
                 )}
               />
             </Wrapper>
@@ -85,7 +88,9 @@ class BackgroundCells extends React.Component {
 
   _selectable() {
     let node = findDOMNode(this);
-    let selector = this._selector = new Selection(this.props.container)
+    let selector = this._selector = new Selection(this.props.container, {
+      longPressThreshold: this.props.longPressThreshold,
+    })
 
     selector.on('selecting', box => {
       let { range, rtl } = this.props;
@@ -114,7 +119,7 @@ class BackgroundCells extends React.Component {
       })
     })
 
-    selector.on('mousedown', (box) => {
+    selector.on('beforeSelect', (box) => {
       if (this.props.selectable !== 'ignoreEvents') return
 
       return !isEvent(findDOMNode(this), box)

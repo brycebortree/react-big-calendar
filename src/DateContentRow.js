@@ -15,6 +15,7 @@ import EventEndingRow from './EventEndingRow';
 let isSegmentInSlot = (seg, slot) => seg.left <= slot && seg.right >= slot;
 
 const propTypes = {
+  date: PropTypes.instanceOf(Date),
   events: PropTypes.array.isRequired,
   range: PropTypes.array.isRequired,
 
@@ -25,13 +26,14 @@ const propTypes = {
   container: PropTypes.func,
   selected: PropTypes.object,
   selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
+  longPressThreshold: PropTypes.number,
 
   onShowMore: PropTypes.func,
   onSelectSlot: PropTypes.func,
   onSelectEnd: PropTypes.func,
   onSelectStart: PropTypes.func,
 
-  now: PropTypes.instanceOf(Date),
+  now: PropTypes.instanceOf(Date).isRequired,
   startAccessor: accessor.isRequired,
   endAccessor: accessor.isRequired,
 
@@ -135,6 +137,7 @@ class DateContentRow extends React.Component {
 
   render() {
     const {
+      date,
       rtl,
       events,
       range,
@@ -150,6 +153,7 @@ class DateContentRow extends React.Component {
       eventWrapperComponent,
       onSelectStart,
       onSelectEnd,
+      longPressThreshold,
       now,
       ...props
     } = this.props;
@@ -171,6 +175,7 @@ class DateContentRow extends React.Component {
       <div className={className}>
         <BackgroundCells
           now={now}
+          date={date}
           rtl={rtl}
           range={range}
           selectable={selectable}
@@ -179,6 +184,7 @@ class DateContentRow extends React.Component {
           onSelectEnd={onSelectEnd}
           onSelectSlot={this.handleSelectSlot}
           cellWrapperComponent={dateCellWrapper}
+          longPressThreshold={longPressThreshold}
         />
 
         <div className='rbc-row-content'>

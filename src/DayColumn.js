@@ -28,7 +28,7 @@ function startsAfter(date, max) {
   return dates.gt(dates.merge(max, date), max, 'minutes');
 }
 
-class DaySlot extends React.Component {
+class DayColumn extends React.Component {
   static propTypes = {
     events: PropTypes.array.isRequired,
     step: PropTypes.number.isRequired,
@@ -44,15 +44,22 @@ class DaySlot extends React.Component {
 
     selectRangeFormat: dateFormat,
     eventTimeRangeFormat: dateFormat,
+    eventTimeRangeStartFormat: dateFormat,
+    eventTimeRangeEndFormat: dateFormat,
+    showMultiDayTimes: PropTypes.bool,
     culture: PropTypes.string,
+    timeslots: PropTypes.number,
+    messages: PropTypes.object,
 
     selected: PropTypes.object,
     selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
     eventOffset: PropTypes.number,
+    longPressThreshold: PropTypes.number,
 
     onSelecting: PropTypes.func,
     onSelectSlot: PropTypes.func.isRequired,
     onSelectEvent: PropTypes.func.isRequired,
+    onDoubleClickEvent: PropTypes.func.isRequired,
 
     className: PropTypes.string,
     dragThroughEvents: PropTypes.bool,
@@ -62,7 +69,11 @@ class DaySlot extends React.Component {
     eventWrapperComponent: elementType.isRequired
   };
 
-  static defaultProps = { dragThroughEvents: true };
+  static defaultProps = {
+    dragThroughEvents: true,
+    timeslots: 2,
+  };
+
   state = { selecting: false };
 
   componentDidMount() {
@@ -91,10 +102,9 @@ class DaySlot extends React.Component {
       ...props
     } = this.props;
 
-    this._totalMin = dates.diff(min, max, 'minutes');
-
-    let { selecting, startSlot, endSlot } = this.state;
-    let style = this._slotStyle(startSlot, endSlot);
+    this._totalMin = dates.diff(min, max, 'minutes')
+    let { selecting, startSlot, endSlot } = this.state
+    let style = this._slotStyle(startSlot, endSlot)
 
     let selectDates = {
       start: this.state.startDate,
@@ -126,47 +136,61 @@ class DaySlot extends React.Component {
 
   renderEvents = () => {
     let {
-      events,
-      min,
-      max,
-      culture,
-      eventPropGetter,
-      selected,
-      eventTimeRangeFormat,
-      eventComponent,
-      eventWrapperComponent: EventWrapper,
-      rtl: isRtl,
-      step,
-      startAccessor,
-      endAccessor,
-      titleAccessor
-    } = this.props;
+        events
+      , min
+      , max
+      , showMultiDayTimes
+      , culture
+      , eventPropGetter
+      , selected
+      , messages
+      , eventComponent
+      , eventTimeRangeFormat
+      , eventTimeRangeStartFormat
+      , eventTimeRangeEndFormat
+      , eventWrapperComponent: EventWrapper
+      , rtl: isRtl
+      , step
+      , timeslots
+      , startAccessor, endAccessor, titleAccessor } = this.props;
 
-    let EventComponent = eventComponent;
+    let EventComponent = eventComponent
 
     let styledEvents = getStyledEvents({
-      events,
-      startAccessor,
-      endAccessor,
-      min,
-      totalMin: this._totalMin,
-      step
-    });
+      events, startAccessor, endAccessor, min, showMultiDayTimes, totalMin: this._totalMin, step, timeslots
+    })
 
     return styledEvents.map(({ event, style }, idx) => {
-      let start = get(event, startAccessor);
-      let end = get(event, endAccessor);
+      let _eventTimeRangeFormat = eventTimeRangeFormat;
+      let _continuesPrior = false;
+      let _continuesAfter = false;
+      let start = get(event, startAccessor)
+      let end = get(event, endAccessor)
 
-      let continuesPrior = startsBefore(start, min);
-      let continuesAfter = startsAfter(end, max);
+      if (start < min) {
+        start = min;
+        _continuesPrior = true;
+        _eventTimeRangeFormat = eventTimeRangeEndFormat;
+      }
 
-      let title = get(event, titleAccessor);
-      let label = localizer.format(
-        { start, end },
-        eventTimeRangeFormat,
-        culture
-      );
-      let _isSelected = isSelected(event, selected);
+      if (end > max) {
+        end = max;
+        _continuesAfter = true;
+        _eventTimeRangeFormat = eventTimeRangeStartFormat;
+      }
+
+      let continuesPrior = startsBefore(start, min)
+      let continuesAfter = startsAfter(end, max)
+
+      let title = get(event, titleAccessor)
+      let label;
+      if (_continuesPrior && _continuesAfter) {
+        label = messages.allDay;
+      } else {
+        label = localizer.format({ start, end }, _eventTimeRangeFormat, culture);
+      }
+
+      let _isSelected = isSelected(event, selected)
 
       if (eventPropGetter)
         var { style: xStyle, className } = eventPropGetter(
@@ -188,12 +212,15 @@ class DaySlot extends React.Component {
               [isRtl ? 'right' : 'left']: `${Math.max(0, xOffset)}%`,
               width: `${width}%`
             }}
-            title={label + ': ' + title}
-            onClick={e => this._select(event, e)}
+            title={(typeof label === 'string' ? label + ': ' : '') + title}
+            onClick={(e) => this._select(event, e)}
+            onDoubleClick={(e) => this._doubleClick(event, e)}
             className={cn('rbc-event', className, {
               'rbc-selected': _isSelected,
               'rbc-event-continues-earlier': continuesPrior,
-              'rbc-event-continues-later': continuesAfter
+              'rbc-event-continues-later': continuesAfter,
+              'rbc-event-continues-day-prior': _continuesPrior,
+              'rbc-event-continues-day-after': _continuesAfter
             })}
           >
             <div className="rbc-event-label">
@@ -222,7 +249,9 @@ class DaySlot extends React.Component {
 
   _selectable = () => {
     let node = findDOMNode(this);
-    let selector = (this._selector = new Selection(() => findDOMNode(this)));
+    let selector = this._selector = new Selection(() => findDOMNode(this), {
+      longPressThreshold: this.props.longPressThreshold,
+    })
 
     let maybeSelect = box => {
       let onSelecting = this.props.onSelecting;
@@ -276,8 +305,8 @@ class DaySlot extends React.Component {
     selector.on('selecting', maybeSelect);
     selector.on('selectStart', maybeSelect);
 
-    selector.on('mousedown', box => {
-      if (this.props.selectable !== 'ignoreEvents') return;
+    selector.on('beforeSelect', (box) => {
+      if (this.props.selectable !== 'ignoreEvents') return
 
       return !isEvent(findDOMNode(this), box);
     });
@@ -323,6 +352,10 @@ class DaySlot extends React.Component {
   _select = (...args) => {
     notify(this.props.onSelectEvent, args);
   };
+
+  _doubleClick = (...args) => {
+    notify(this.props.onDoubleClickEvent, args)
+  };
 }
 
 function minToDate(min, date) {
@@ -335,4 +368,4 @@ function minToDate(min, date) {
   return dates.milliseconds(dt, 0);
 }
 
-export default DaySlot;
+export default DayColumn;
