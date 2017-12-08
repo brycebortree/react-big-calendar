@@ -7,14 +7,16 @@ export default function moveDate(View, { action, date, now, ...props }) {
 
   switch (action) {
     case navigate.TODAY:
-      date = today || new Date()
+      date = now || new Date();
       break;
     case navigate.DATE:
       break;
     default:
-      invariant(View && typeof View.navigate === 'function',
-        'Calendar View components must implement a static `.navigate(date, action)` method.s')
-      date = View.navigate(date, action, props)
+      invariant(
+        View && typeof View.navigate === 'function',
+        'Calendar View components must implement a static `.navigate(date, action)` method.s'
+      );
+      date = View.navigate(date, action, props);
   }
-  return date
+  return date;
 }
